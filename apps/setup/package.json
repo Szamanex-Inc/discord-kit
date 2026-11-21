@@ -1,0 +1,21 @@
+{
+  "name": "@discord-kit/setup",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "plan": "tsx src/index.ts plan",
+    "setup": "tsx src/index.ts setup",
+    "publish-content": "tsx src/index.ts publish",
+    "typecheck": "tsc -p .",
+    "test": "tsx --test src/*.test.ts",
+    "diff": "tsx src/index.ts diff",
+    "export": "tsx src/index.ts export"
+  },
+  "dependencies": {
+    "@discord-kit/config": "workspace:*",
+    "discord.js": "^14.27.0",
+    "yaml": "^2.9.1"
+  },
+  "license": "MIT"
+}

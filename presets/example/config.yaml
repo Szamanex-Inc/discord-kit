@@ -1,0 +1,198 @@
+# Example preset for discord-kit.
+#
+# A preset holds everything specific to one server: roles, categories, channels, channel
+# content and bot features. The code knows none of these names. To make your own server:
+#   1. copy this folder anywhere (usually its own repository): cp -r presets/example my-server
+#   2. point PRESET_DIR at it in .env:                         PRESET_DIR=/path/to/my-server
+#   3. change names and texts in this file and in content/
+#   4. check the result offline:                               pnpm server:plan
+#   5. apply it to the server:                                 pnpm server:setup, then pnpm server:publish
+#
+# NOTE when renaming on a live server: roles and channels are matched BY NAME and nothing is
+# ever deleted. Renaming here = creating a new role/channel. Rename on Discord first, then here.
+
+# Format version of this file. discord-kit refuses presets with a version it does not support.
+schema_version: 2
+
+# Bot settings that are not tied to one feature.
+bot:
+  # Roles allowed to use admin commands such as /feature (Administrator always can).
+  admin_roles: ['Admin', 'Moderator']
+  # Channel where the bot posts module errors and warnings (never pings anyone). Optional.
+  log_channel: 'bot-logs'
+
+# Roles are created in this order, from HIGHEST to lowest.
+# color: hex (e.g. "#C79C6E"), omitted = no color.
+# hoist: true = separate group in the member list.
+# mentionable: true = the @role can be pinged.
+# perms: list of permissions in snake_case (e.g. administrator, manage_messages, ...).
+roles:
+  # --- Ranks ---
+  - { name: 'Admin', hoist: true, perms: [administrator] }
+  - { name: 'Moderator', hoist: true, perms: [manage_messages, moderate_members, mute_members, move_members] }
+  - { name: 'Member', hoist: true }
+  - { name: 'Guest' }
+
+  # --- Self-assigned roles (picked in #pick-roles) ---
+  - { name: 'Red', color: '#E74C3C' }
+  - { name: 'Green', color: '#2ECC71' }
+  - { name: 'Blue', color: '#3498DB' }
+  - { name: 'Ping: Events', mentionable: true }
+  - { name: 'Ping: News', mentionable: true }
+
+# Roles treated as members (used by members_only).
+member_role: ['Admin', 'Moderator', 'Member']
+
+# Categories and channels.
+# type: text | voice | forum | announcement (forum and announcement require Community mode)
+# read_only: true    -> @everyone can read, only roles in "writers" can post
+# private: [roles]   -> channel/category visible only to these roles (and admins)
+# members_only: true -> visible only to roles in `member_role`
+# content: file.md   -> (path relative to the preset) content the bot posts (`pnpm server:publish`)
+# system_channel: true -> Discord posts join messages for new members here
+# Channels inherit category permissions unless the channel sets its own.
+categories:
+  - name: 'START'
+    channels:
+      - {
+          name: 'welcome',
+          read_only: true,
+          writers: ['Admin', 'Moderator'],
+          system_channel: true,
+          content: 'content/welcome.md',
+        }
+      - {
+          name: 'rules',
+          read_only: true,
+          writers: ['Admin', 'Moderator'],
+          content: 'content/rules.md',
+          topic: 'Server rules',
+        }
+      - {
+          name: 'pick-roles',
+          read_only: true,
+          writers: ['Admin', 'Moderator'],
+          topic: 'Pick your roles, change them any time',
+        }
+      - {
+          name: 'announcements',
+          read_only: true,
+          writers: ['Admin', 'Moderator'],
+          content: 'content/announcements.md',
+        }
+
+  - name: 'GENERAL'
+    channels:
+      - { name: 'general' }
+      - { name: 'links', read_only: true, writers: ['Admin', 'Moderator'], content: 'content/links.md' }
+      - { name: 'off-topic' }
+
+  - name: 'MEMBERS'
+    members_only: true
+    channels:
+      - { name: 'members-chat' }
+      - { name: 'events', topic: 'Ping @Ping: Events' }
+
+  - name: 'JOIN US'
+    channels:
+      - { name: 'applications', content: 'content/applications.md', topic: 'Want to join? Post here' }
+
+  - name: 'VOICE'
+    channels:
+      - { name: 'Lounge', type: voice }
+      - { name: 'Squad', type: voice, user_limit: 5 }
+      - { name: 'Members', type: voice, members_only: true }
+      - { name: 'AFK', type: voice }
+
+  - name: 'STAFF'
+    private: ['Admin', 'Moderator']
+    channels:
+      - { name: 'staff' }
+      - { name: 'bot-logs' }
+
+# Bot features (apps/bot, `pnpm bot`). Each feature has `enabled` plus its own settings.
+# The state can be changed at runtime with /feature on|off|reset (stored in the bot's database,
+# wins over `enabled` here), and DISABLED_FEATURES=name,... force-disables features as a kill switch.
+features:
+  # Role picker menu in `channel`. Every text is optional and has an English default.
+  role_picker:
+    enabled: true
+    channel: 'pick-roles'
+    title: 'Pick your roles'
+    message: 'You can select several and change them at any time.'
+    # {roles} = the selected roles.
+    saved_reply: 'Saved. Your roles from this menu: {roles}'
+    cleared_reply: 'Saved. You have no roles from this menu now.'
+    error_reply: 'Something went wrong, please try again.'
+    menus:
+      - { placeholder: 'Pick a color', roles: [Red, Green, Blue] }
+      - { placeholder: 'Notifications', roles: ['Ping: Events', 'Ping: News'] }
+
+  # Greets new members. Needs the privileged Server Members intent in the Developer Portal.
+  # Placeholders: {user} (mention), {name}, {server}, {member_count}.
+  welcome:
+    enabled: true
+    channel: 'welcome'
+    message: 'Welcome {user}! You are member number {member_count} of {server}. Start with #rules.'
+    dm: 'Hi {name}, welcome to {server}! Pick your roles in #pick-roles.'
+    auto_roles: ['Guest']
+
+  # Applications: a button in `channel` opens a form (at most 5 questions); submissions land in
+  # `review_channel` with Accept/Reject buttons. Accepting gives accept_roles and removes remove_roles.
+  # Reviewers: reviewer_roles, or bot.admin_roles when omitted. Placeholders in DMs: {name}, {server}.
+  applications:
+    enabled: true
+    channel: 'applications'
+    review_channel: 'staff'
+    title: 'Join us'
+    message: 'Press the button and tell us a bit about yourself.'
+    button_label: 'Apply'
+    questions:
+      - { label: 'Who are you?', style: short }
+      - { label: 'What brings you here?', style: paragraph }
+      - { label: 'When are you usually around?', style: short, required: false }
+    accept_roles: ['Member']
+    remove_roles: ['Guest']
+    accepted_dm: 'Welcome to {server}, {name}! You are now a member.'
+    rejected_dm: 'Sorry {name}, your application to {server} was not accepted this time.'
+    # Optional texts for reviewers. Placeholders: {id}, {reviewer}.
+    staff_texts:
+      review_title: 'Application #{id}'
+      accept_label: 'Accept'
+      reject_label: 'Reject'
+
+  # Events: /event create makes a Discord event, announces it in `channel` and posts reminders.
+  # Placeholders in texts: {title}, {time}, {relative}, {link}, {ping}, {organizer}.
+  events:
+    enabled: true
+    channel: 'events'
+    timezone: 'Europe/Warsaw'
+    remind_before: [60, 15]
+    ping_roles: ['Ping: Events']
+    default_duration: 120
+
+  # Projects: /project create gives each project a role, a category, a #tickets forum (one tag per
+  # status), #board and #activity. Needs Community mode (forums) and the privileged Message Content
+  # intent (to read posts made by hand). Statuses come from templates; the built-in ones are
+  # dev (Todo, In progress, Testing, Blocked, Ready for main, Deployed) and simple (Todo, Doing, Done).
+  projects:
+    enabled: false
+    creator_roles: ['Moderator'] # who can run /project create (admins always can)
+    default_visibility: private # private: project members only; public: all member roles
+    # default_template: dev
+    # role_format: 'Project: {name}'
+    # templates: # replaces the built-in templates when set
+    #   kanban:
+    #     - { key: todo, label: 'Todo', emoji: '🟦' }
+    #     - { key: doing, label: 'Doing', emoji: '🟨' }
+    #     - { key: blocked, label: 'Blocked', emoji: '🟥', blocked: true }
+    #     - { key: done, label: 'Done', emoji: '✅', done: true }
+
+  # GitHub: links project repos through a GitHub App (status labels, issue import choice; issue
+  # sync follows). Needs GITHUB_APP_ID and the app's private key in the environment; see
+  # docs/github-app.md in discord-kit.
+  github:
+    enabled: false
+    # poll_minutes: 5 # how often GitHub is checked for changes (1–60)
+    # label_prefix: 'status: '
+    # issues_for_posts: true # create issues for tickets posted by members in a project forum

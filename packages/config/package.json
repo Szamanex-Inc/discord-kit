@@ -1,0 +1,19 @@
+{
+  "name": "@discord-kit/config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "license": "MIT"
+}

@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+allowBuilds:
+  esbuild: true
+  # The root `prepare` script installs the git hook (and skips it where there is no .git).
+  simple-git-hooks: false

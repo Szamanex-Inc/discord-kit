@@ -1,0 +1,43 @@
+{
+  "name": "discord-kit",
+  "private": true,
+  "description": "Discord server toolkit: config-driven server setup and a feature-flagged bot",
+  "type": "module",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "server:plan": "pnpm --filter @discord-kit/setup run plan",
+    "server:setup": "pnpm --filter @discord-kit/setup run setup",
+    "server:publish": "pnpm --filter @discord-kit/setup run publish-content",
+    "typecheck": "pnpm -r typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm -r test",
+    "bot": "pnpm --filter @discord-kit/bot start",
+    "bot:dev": "pnpm --filter @discord-kit/bot dev",
+    "server:diff": "pnpm --filter @discord-kit/setup run diff",
+    "server:export": "pnpm --filter @discord-kit/setup run export",
+    "lint": "oxlint --type-aware",
+    "prepare": "git rev-parse --git-dir >/dev/null 2>&1 && simple-git-hooks || true"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "lint-staged": "^17.6.0",
+    "oxlint": "^1.93.0",
+    "oxlint-tsgolint": "^7.0.2007",
+    "prettier": "^3.9.10",
+    "simple-git-hooks": "^2.14.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm exec lint-staged"
+  },
+  "lint-staged": {
+    "*.{ts,js,json,md,yml,yaml}": "prettier --write",
+    "*.ts": "oxlint --type-aware"
+  },
+  "license": "MIT"
+}
